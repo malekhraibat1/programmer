@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { AiProgram } from '../types/index.ts';
-import { AI_PROGRAMS } from '../data/initialData.ts';
+import { AiProgram, AiModelId } from '../types/index.ts';
+import { AI_PROGRAMS, AI_MODELS } from '../data/initialData.ts';
 import { sound } from '../utils/audio.ts';
 import { 
   Sparkles, 
@@ -19,7 +19,9 @@ import {
   Code, 
   FolderPlus, 
   X,
-  ExternalLink
+  ExternalLink,
+  BrainCircuit,
+  Clock
 } from 'lucide-react';
 
 interface AiSuiteViewProps {
@@ -28,12 +30,16 @@ interface AiSuiteViewProps {
 }
 
 export function AiSuiteView({ onSendCodeToIde, onSaveSnippetToVault }: AiSuiteViewProps) {
+  const [selectedModel, setSelectedModel] = useState<AiModelId>('chatgpt');
   const [selectedProgram, setSelectedProgram] = useState<AiProgram | null>(null);
   const [promptInput, setPromptInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [resultOutput, setResultOutput] = useState<string | null>(null);
   const [extractedCode, setExtractedCode] = useState<string | null>(null);
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const activeModel = AI_MODELS.find((m) => m.id === selectedModel) || AI_MODELS[0];
 
   const getProgramIcon = (iconName: string, className = "w-5 h-5") => {
     switch (iconName) {
@@ -71,13 +77,14 @@ export function AiSuiteView({ onSendCodeToIde, onSaveSnippetToVault }: AiSuiteVi
       const res = await fetch('/api/ai/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: fullPrompt }),
+        body: JSON.stringify({ prompt: fullPrompt, model: selectedModel }),
       });
 
       if (!res.ok) throw new Error('فشل استجابة المحرك الذكي');
 
       const data = await res.json();
       const reply = data.reply || '';
+      setLatencyMs(data.latencyMs || null);
 
       // Extract code block
       const codeMatch = reply.match(/```(?:typescript|javascript|sql|json|python)?([\s\S]*?)```/);
@@ -116,12 +123,40 @@ export function AiSuiteView({ onSendCodeToIde, onSaveSnippetToVault }: AiSuiteVi
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              مربعات برمجية متخصصة مدعومة بنموذج Gemini 3.8 Flash لتسريع كافة مراحل الهندسة البرمجية والمعمارية.
+              اختر المحرك الذكي المفضل لتشغيل البرامج التحليلية (ChatGPT, DeepSeek R1, Claude 4, Gemini).
             </p>
           </div>
 
-          <div className="text-xs font-mono text-cyan-400">
-            ● انقر على أي مربع لفتح برنامج الذكاء الاصطناعي وتشغيله فورياً
+          {/* Model Switcher Bar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-slate-900/80 border border-slate-800 rounded-xl">
+            {AI_MODELS.map((model) => {
+              const isSelected = selectedModel === model.id;
+              return (
+                <button
+                  key={model.id}
+                  onClick={() => {
+                    sound.playClick(650);
+                    setSelectedModel(model.id);
+                  }}
+                  style={{
+                    backgroundColor: isSelected ? model.accentBg : undefined,
+                    borderColor: isSelected ? model.borderColor : 'transparent',
+                    color: isSelected ? model.color : undefined,
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-all border flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: model.color }}
+                  />
+                  <span>{model.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

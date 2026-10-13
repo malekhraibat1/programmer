@@ -1,4 +1,4 @@
-import { AppNode, CircuitConnection, ApiEndpoint, DatabaseTable, SavedSnippet, AiProgram } from '../types/index.ts';
+import { AppNode, CircuitConnection, ApiEndpoint, DatabaseTable, SavedSnippet, AiProgram, AiModelConfig } from '../types/index.ts';
 
 export const INITIAL_APP_NODES: AppNode[] = [
   {
@@ -634,6 +634,57 @@ export const AI_PROGRAMS: AiProgram[] = [
     badge: 'واجهات عصرية',
     defaultPrompt: 'اكتب مكون React كامل مع Tailwind CSS يتميز بالأناقة وسلاسة التفاعل والحركات الخفيفة:',
     sampleInput: 'شاشة مراقبة لحظية لمؤشرات الأداء مع مؤشرات دائرية وأزرار تحكم سريعة.',
+  },
+];
+
+export const AI_MODELS: AiModelConfig[] = [
+  {
+    id: 'chatgpt',
+    name: 'ChatGPT 4o',
+    provider: 'OpenAI',
+    version: 'GPT-4o Enterprise',
+    badge: 'GPT-4o',
+    color: '#10a37f',
+    accentBg: 'rgba(16, 163, 127, 0.15)',
+    borderColor: 'rgba(16, 163, 127, 0.4)',
+    description: 'نموذج ChatGPT 4o الرائد من OpenAI — سرعة فائقة في كتابة الكود وحلول المعمارية المتكاملة.',
+    specialty: 'معمارية النظم & إعادة هيكلة الكود & تكامل الخدمات',
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek R1',
+    provider: 'DeepSeek',
+    version: 'V3 / R1 Reasoner',
+    badge: 'DeepSeek R1',
+    color: '#0ea5e9',
+    accentBg: 'rgba(14, 165, 233, 0.15)',
+    borderColor: 'rgba(14, 165, 233, 0.4)',
+    description: 'محرك الاستدلال والتفكير العميق DeepSeek R1 — متخصص في الخوارزميات المعقدة والتحليل الرياضي.',
+    specialty: 'تفكير متسلسل & خوارزميات مكثفة & تدقيق عميق للثغرات',
+  },
+  {
+    id: 'claude',
+    name: 'Claude 4 Sonnet',
+    provider: 'Anthropic',
+    version: 'Claude 3.5 / 4',
+    badge: 'Claude 4',
+    color: '#ea580c',
+    accentBg: 'rgba(234, 88, 12, 0.15)',
+    borderColor: 'rgba(234, 88, 12, 0.4)',
+    description: 'نموذج Claude المتقدم من Anthropic — شفرات برمجية فائقة الأناقة، فكر دفاعي وتوثيق نقي.',
+    specialty: 'كود نظيف Clean Code & هندسة البرمجيات الدفاعية & توثيق دقيق',
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini 2.5 Flash',
+    provider: 'Google DeepMind',
+    version: 'Gemini / Gemma',
+    badge: 'Gemini',
+    color: '#8b5cf6',
+    accentBg: 'rgba(139, 92, 246, 0.15)',
+    borderColor: 'rgba(139, 92, 246, 0.4)',
+    description: 'محرك الذكاء الاصطناعي من Google — سياق واسع وسرعة استجابة فائقة مدمجة في DevCore.',
+    specialty: 'معالجة فورية & سياق عملاق & حوسبة سحابية موزعة',
   },
 ];
 

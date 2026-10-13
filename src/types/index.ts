@@ -42,6 +42,22 @@ export interface WindowState {
   isMinimized: boolean;
   isMaximized: boolean;
   zIndex: number;
+  position?: { x: number; y: number };
+}
+
+export type AiModelId = 'chatgpt' | 'deepseek' | 'claude' | 'gemini';
+
+export interface AiModelConfig {
+  id: AiModelId;
+  name: string;
+  provider: string;
+  version: string;
+  badge: string;
+  color: string;
+  accentBg: string;
+  borderColor: string;
+  description: string;
+  specialty: string;
 }
 
 export interface LogMessage {

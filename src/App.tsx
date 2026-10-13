@@ -17,25 +17,36 @@ import {
   INITIAL_SAVED_SNIPPETS
 } from './data/initialData.ts';
 import { sound } from './utils/audio.ts';
-import { TopBar } from './components/TopBar.tsx';
+import { getStoredAuth, clearStoredAuth, StoredAuthState } from './utils/storage.ts';
+import { TopBar, AppViewMode } from './components/TopBar.tsx';
 import { CircuitBoard } from './components/CircuitBoard.tsx';
 import { MatrixView } from './components/MatrixView.tsx';
 import { WindowManager } from './components/WindowManager.tsx';
 import { Taskbar } from './components/Taskbar.tsx';
 import { SignatureModal } from './components/SignatureModal.tsx';
 import { AiSuiteView } from './components/AiSuiteView.tsx';
+import { PerformanceRadar } from './components/PerformanceRadar.tsx';
+import { Building3DView } from './components/Building3DView.tsx';
+import { LoginView } from './components/LoginView.tsx';
+import { CctvSurveillanceView } from './components/CctvSurveillanceView.tsx';
+import { MultiAiFusionView } from './components/MultiAiFusionView.tsx';
+import { AppDesignerStudio } from './components/AppDesignerStudio.tsx';
 
 const STORAGE_KEY = 'malek_hraibat_code_vault_v1';
 
 export default function App() {
+  // Authentication with Auto-Save Session (Malek / Kk1235)
+  const [authState, setAuthState] = useState<StoredAuthState>(getStoredAuth);
+
   const [nodes, setNodes] = useState<AppNode[]>(INITIAL_APP_NODES);
   const [connections, setConnections] = useState<CircuitConnection[]>(CIRCUIT_CONNECTIONS);
-  const [currentView, setCurrentView] = useState<'circuit' | 'workspace' | 'matrix' | 'ai-suite'>('circuit');
+  const [currentView, setCurrentView] = useState<AppViewMode>('building');
   const [flowFilter, setFlowFilter] = useState<'all' | 'data' | 'deploy' | 'auth' | 'telemetry'>('all');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [pulseMultiplier, setPulseMultiplier] = useState(1);
   const [highestZ, setHighestZ] = useState(12);
   const [isSignatureOpen, setIsSignatureOpen] = useState(false);
+  const [radarVisible, setRadarVisible] = useState(true);
   const [ideCodeToLoad, setIdeCodeToLoad] = useState<{ code: string; filename: string } | null>(null);
 
   // Window states (Persona and AI available)
@@ -51,6 +62,18 @@ export default function App() {
     { appId: 'telemetry', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 4 },
     { appId: 'terminal', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 3 },
   ]);
+
+  // If user is not authenticated, render LoginView (Requires Malek / Kk1235)
+  if (!authState.isLoggedIn) {
+    return (
+      <LoginView
+        onLoginSuccess={(auth) => {
+          setAuthState(auth);
+          sound.playSecurityAccess();
+        }}
+      />
+    );
+  }
 
   // Open / Focus an app window
   const handleOpenApp = (appId: AppId) => {
@@ -137,101 +160,119 @@ export default function App() {
       { appId: 'telemetry', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 4 },
       { appId: 'terminal', isOpen: false, isMinimized: false, isMaximized: false, zIndex: 3 },
     ]);
-    setHighestZ(13);
   };
 
-  // Run ecosystem surge pulse
+  // Run ecosystem pulse
   const handleRunEcosystemPulse = () => {
-    setPulseMultiplier(3);
-    sound.playExecute();
+    sound.playPacketPulse();
+    setPulseMultiplier(2.5);
     setTimeout(() => {
       setPulseMultiplier(1);
-    }, 4000);
+    }, 3000);
   };
 
   const handleCommitTrigger = (msg: string) => {
-    handleRunEcosystemPulse();
-    setTimeout(() => {
-      handleOpenApp('pipeline');
-    }, 800);
+    sound.playSuccess();
+    handleOpenApp('pipeline');
   };
 
   const handleRequestSent = (path: string) => {
-    sound.playPacketPulse();
-    setPulseMultiplier(2);
-    setTimeout(() => {
-      setPulseMultiplier(1);
-    }, 2000);
+    sound.playClick(800);
   };
 
   const handleStressTrigger = () => {
-    setPulseMultiplier(3.5);
+    sound.playWarning();
+    setNodes((prev) =>
+      prev.map((n) =>
+        n.id === 'telemetry' || n.id === 'database'
+          ? { ...n, status: 'warning' }
+          : n
+      )
+    );
     setTimeout(() => {
-      setPulseMultiplier(1);
-    }, 5000);
+      setNodes((prev) =>
+        prev.map((n) => (n.status === 'warning' ? { ...n, status: 'active' } : n))
+      );
+    }, 4000);
   };
 
-  // Cross-app interactions
-  const handleSendCodeToIde = (code: string, filename = 'custom.ts') => {
-    sound.playSuccess();
+  const handleToggleSound = () => {
+    sound.enabled = !soundEnabled;
+    setSoundEnabled(!soundEnabled);
+  };
+
+  const handleSendCodeToIde = (code: string, filename = 'imported_code.ts') => {
     setIdeCodeToLoad({ code, filename });
     handleOpenApp('ide');
+    sound.playDoorOpen();
   };
 
   const handleAskAiWithCode = (code: string) => {
-    sound.playPacketPulse();
     handleOpenApp('ai');
+    sound.playPacketPulse();
   };
 
-  const handleSaveSnippetToVault = (code: string, title = 'شفرة محفوظة') => {
-    sound.playSuccess();
+  const handleSaveSnippetToVault = (code: string, title: string) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      const existing: SavedSnippet[] = stored ? JSON.parse(stored) : INITIAL_SAVED_SNIPPETS;
+      const list: SavedSnippet[] = stored ? JSON.parse(stored) : INITIAL_SAVED_SNIPPETS;
       const newSnippet: SavedSnippet = {
         id: `snip-${Date.now()}`,
-        title,
-        filename: 'exported-snippet.ts',
+        title: title || 'مقتطف برمجي محصن للمهندس مالك',
+        filename: 'snippet.ts',
         language: 'typescript',
         category: 'backend',
-        description: 'شفرة مضافة ومسجلة في مستودع المهندس مالك حريبات.',
-        tags: ['Malek', 'Exported', 'Saved'],
+        description: 'تم تصديره وحفظه في خزانة الأكواد المحصنة للمهندس مالك حريبات.',
         code,
+        tags: ['DevCore', 'Malek-Hraibat', 'Secure'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         author: 'المهندس مالك حريبات',
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([newSnippet, ...existing]));
+      const updated = [newSnippet, ...list];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      sound.playSuccess();
+      handleOpenApp('vault');
     } catch {
       // ignore
     }
   };
 
-  const activeApps = windows
-    .filter((w) => w.isOpen && !w.isMinimized)
-    .map((w) => w.appId);
+  const handleLogout = () => {
+    sound.playClick(400);
+    clearStoredAuth();
+    setAuthState({
+      isLoggedIn: false,
+      username: '',
+      role: 'Guest Architect',
+      loginTime: '',
+      sessionToken: '',
+    });
+  };
+
+  const activeApps = windows.filter((w) => w.isOpen).map((w) => w.appId);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#070b14] text-slate-100 font-sans">
-      {/* Top Header */}
+    <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans selection:bg-cyan-500 selection:text-white" dir="rtl">
+      {/* Top Application Bar */}
       <TopBar
         currentView={currentView}
         onViewChange={setCurrentView}
         soundEnabled={soundEnabled}
-        onToggleSound={() => {
-          const next = !soundEnabled;
-          sound.enabled = next;
-          setSoundEnabled(next);
-        }}
+        onToggleSound={handleToggleSound}
         onRunEcosystemPulse={handleRunEcosystemPulse}
         onReset={handleResetWindows}
         activeAppsCount={activeApps.length}
         onOpenSignature={() => setIsSignatureOpen(true)}
+        radarVisible={radarVisible}
+        onToggleRadar={() => setRadarVisible(!radarVisible)}
+        username={authState.username || 'Malek'}
+        onLogout={handleLogout}
       />
 
-      {/* Main Content Area */}
-      <div className="relative flex-1 w-full h-full overflow-hidden">
-        {/* Layer 1: Circuit Board Canvas with Random Generative Lines */}
+      {/* Main Viewport Container */}
+      <div className="relative flex-1 w-full overflow-hidden">
+        {/* Layer 1: Electronic Circuit Board */}
         {currentView === 'circuit' && (
           <CircuitBoard
             nodes={nodes}
@@ -244,7 +285,39 @@ export default function App() {
           />
         )}
 
-        {/* Layer 2: Matrix Architectural View */}
+        {/* Dedicated Standalone CCTV Surveillance Page */}
+        {currentView === 'cctv' && (
+          <CctvSurveillanceView
+            onBackToComplex={() => setCurrentView('building')}
+          />
+        )}
+
+        {/* Multi-AI Model Fusion Page (دمج نموذجين ذكاء أو أكثر) */}
+        {currentView === 'ai-fusion' && (
+          <MultiAiFusionView
+            onSendCodeToIde={handleSendCodeToIde}
+            onSaveSnippetToVault={handleSaveSnippetToVault}
+          />
+        )}
+
+        {/* Application & Web Page Visual Designer Studio (تصميم التطبيقات والصفحات) */}
+        {currentView === 'designer' && (
+          <AppDesignerStudio
+            onSendCodeToIde={handleSendCodeToIde}
+            onSaveSnippetToVault={handleSaveSnippetToVault}
+          />
+        )}
+
+        {/* 3D Modular Tech Campus View */}
+        {currentView === 'building' && (
+          <Building3DView
+            nodes={nodes}
+            activeApps={activeApps}
+            onOpenApp={handleOpenApp}
+          />
+        )}
+
+        {/* Layer 3: Matrix Architectural View */}
         {currentView === 'matrix' && (
           <MatrixView nodes={nodes} onOpenApp={handleOpenApp} />
         )}
@@ -329,6 +402,13 @@ export default function App() {
         isOpen={isSignatureOpen}
         onClose={() => setIsSignatureOpen(false)}
       />
+
+      {/* Live Recharts Performance Radar Component */}
+      {radarVisible && (
+        <PerformanceRadar
+          onStressSpike={handleStressTrigger}
+        />
+      )}
     </div>
   );
 }
