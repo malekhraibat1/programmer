@@ -1,0 +1,6 @@
+{
+  "name": "DevCore: منظومة مهندس البرمجيات",
+  "description": "واجهة إلكترونية تفاعلية ومتحركة تجسد عقل وأدوات مهندس البرمجيات مع برامج قابلة للتشغيل وخطوط نقل بيانات حية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
